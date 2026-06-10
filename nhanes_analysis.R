@@ -102,4 +102,15 @@ dpq_clean <- nhanes('DPQ_J') %>%
 # Combining all cleaned data frames 
 df_list <- list(demo_clean, dpq_clean, diq_clean, bpq_clean, mcq_clean)
 df_complete <- df_list %>% reduce(left_join, by = 'seqn')
-
+# Setting refused or don't knows to NA
+df_clean <- df_complete %>%
+  mutate(
+    across(
+      .cols = c(hypertension, high_cholest, diabetes, stroke, cancer),
+      .fns = ~ case_when(
+        .x == "Yes" ~ "Yes",
+        .x == "No" ~ "No",
+        .default = NA_character_
+      )
+    )
+  )
