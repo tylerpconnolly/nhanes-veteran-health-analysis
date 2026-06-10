@@ -6,13 +6,19 @@ library(survey)
 
 # 02 Import Data ----
 demo <- nhanes('DEMO_J')
+mental_health <- nhanes('DPQ_J')
+bp_cholest <- nhanes('BPQ_J')
+diabetes <- nhanes('DIQ_J')
+med_conditions <- nhanes('MCQ_J')
+
 
 # 03 Clean and Recode ----
-# Create vector of variable names for trimmed dataset
+# Create vector of variable names for trimmed data set
 selection <- c(
-  veteran = "DMQMILIZ",
+  seqn      = "SEQN",
+  veteran   = "DMQMILIZ",
   age_years = "RIDAGEYR",
-  gender = "RIAGENDR",
+  gender    = "RIAGENDR",
   ethnicity = "RIDRETH3",
   hh_income = "INDHHIN2",
   education = "DMDEDUC2"
