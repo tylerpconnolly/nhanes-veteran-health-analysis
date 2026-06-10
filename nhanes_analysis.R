@@ -114,3 +114,13 @@ df_clean <- df_complete %>%
       )
     )
   )
+
+df_clean |>
+  tbl_summary(
+    by = veteran, 
+    include = c(age_years, gender, ethnicity, hh_income,
+                education, phq9_category, , phq9_score, diabetes,
+                hypertension, high_cholest, cardio_burden,
+                stroke, cancer)
+  ) |>
+  add_p(test = list(education ~ "chisq.test"))
