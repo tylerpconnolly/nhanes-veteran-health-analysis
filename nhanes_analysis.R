@@ -3,6 +3,7 @@ library(nhanesA)
 library(tidyverse)
 library(gtsummary)
 library(survey)
+library(broom)
 
 # 02 Import Data ----
 demo <- nhanes('DEMO_J')
@@ -145,14 +146,49 @@ df_clean <- df_complete %>%
       hh_income == "$100,000 and Over" ~ "High income",
       .default = NA_character_
     )
+  ) %>%
+  mutate(
+    phq9_binary = case_when(
+      phq9_score < 10 ~ "Not Depressed",
+      phq9_score >= 10 ~ "Depressed",
+      .default = NA_character_
+    ),
+    phq9_binary = factor(phq9_binary, levels = c("Not Depressed", "Depressed"))
   )
 
-df_clean |>
+df_clean %>%
   tbl_summary(
     by = veteran, 
     include = c(age_years, gender, ethnicity, hh_income,
                 education, phq9_category, , phq9_score, diabetes,
                 hypertension, high_cholest, cardio_burden,
                 stroke, cancer)
-  ) |>
-  add_p(test = list(education ~ "chisq.test"))
+  ) %>%
+  add_p()
+
+model_unadjusted <- glm(
+  phq9_binary ~ veteran,
+  data = df_clean,
+  family = "binomial"
+)
+
+model <- glm(
+  phq9_binary ~ veteran + age_years + gender + ethnicity + hh_income+
+    education + diabetes + hypertension + high_cholest + cardio_burden +
+    stroke + cancer, 
+  data = df_clean,
+  family = "binomial"
+)
+
+
+summary(model)
+exp(coef(model))
+exp(confint(model))
+
+model %>%
+  tbl_regression(exponentiate = TRUE)
+
+model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE)
+
+model_results <- model_results %>%
+  filter(term != "(Intercept)")
