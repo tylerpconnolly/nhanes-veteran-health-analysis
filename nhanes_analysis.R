@@ -113,6 +113,38 @@ df_clean <- df_complete %>%
         .default = NA_character_
       )
     )
+  ) %>%
+  mutate(
+    education = case_when(
+      education == "Less than 9th grade" ~ "Less than high school",
+      education == "9-11th grade (Includes 12th grade with no diploma)" ~
+        "Less than high school",
+      education == "High school graduate/GED or equivalent" ~ 
+        "High school graduate/GED", 
+      education == "Some college or AA degree" ~ "Some college or AA degree", 
+      education == "College graduate or above" ~ "College graduate or above",
+      .default = NA_character_
+      
+    )
+  ) %>%
+  mutate(
+    hh_income = case_when(
+      hh_income == "$ 0 to $ 4,999" ~ "Low income",
+      hh_income == "$ 5,000 to $ 9,999" ~ "Low income",
+      hh_income == "$10,000 to $14,999" ~ "Low income",
+      hh_income == "$15,000 to $19,999" ~ "Low income",
+      hh_income == "Under $20,000" ~ "Low income",
+      hh_income == "$20,000 and Over" ~ "Lower middle",
+      hh_income == "$20,000 to $24,999" ~ "Lower middle",
+      hh_income == "$25,000 to $34,999" ~ "Lower middle",
+      hh_income == "$35,000 to $44,999" ~ "Lower middle",
+      hh_income == "$45,000 to $54,999" ~ "Upper middle",
+      hh_income == "$55,000 to $64,999" ~ "Upper middle",
+      hh_income == "$65,000 to $74,999" ~ "Upper middle",
+      hh_income == "$75,000 to $99,999" ~ "High income",
+      hh_income == "$100,000 and Over" ~ "High income",
+      .default = NA_character_
+    )
   )
 
 df_clean |>
