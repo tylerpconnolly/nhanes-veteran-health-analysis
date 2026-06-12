@@ -156,15 +156,38 @@ df_clean <- df_complete %>%
     phq9_binary = factor(phq9_binary, levels = c("Not Depressed", "Depressed"))
   )
 
+df_clean <- df_clean %>%
+  mutate(
+    ethnicity = relevel(factor(ethnicity), ref = "Non-Hispanic White")
+  )
+
+# 04 Table Summary and Logistic Regression Model ----
 df_clean %>%
   tbl_summary(
     by = veteran, 
     include = c(age_years, gender, ethnicity, hh_income,
                 education, phq9_category, , phq9_score, diabetes,
                 hypertension, high_cholest, cardio_burden,
-                stroke, cancer)
+                stroke, cancer),
+    label = list(
+      age_years ~ "Age (Years)",
+      gender ~ "Gender",
+      ethnicity ~ "Ethnicity",
+      hh_income ~ "Household Income",
+      education ~ "Education", 
+      phq9_category ~ "PHQ9 Depression Scale", 
+      phq9_score ~ "PHQ9 Depression Score",
+      diabetes ~ "Diabetes", 
+      hypertension ~ "Hypertension", 
+      high_cholest ~ "High Cholesterol", 
+      cardio_burden ~ "Cardio Burden", 
+      stroke ~ "Stroke", 
+      cancer ~ "Cancer"
+    )
   ) %>%
   add_p()
+
+
 
 model_unadjusted <- glm(
   phq9_binary ~ veteran,
@@ -172,13 +195,16 @@ model_unadjusted <- glm(
   family = "binomial"
 )
 
+
+
 model <- glm(
   phq9_binary ~ veteran + age_years + gender + ethnicity + hh_income+
     education + diabetes + hypertension + high_cholest + cardio_burden +
     stroke + cancer, 
   data = df_clean,
   family = "binomial"
-)
+) 
+
 
 
 summary(model)
@@ -186,9 +212,76 @@ exp(coef(model))
 exp(confint(model))
 
 model %>%
-  tbl_regression(exponentiate = TRUE)
+  tbl_regression(
+    exponentiate = TRUE,
+    label = list(
+      veteran      ~ "Veteran Status",
+      age_years    ~ "Age (Years)",
+      gender       ~ "Gender",
+      ethnicity    ~ "Race/Ethnicity",
+      hh_income    ~ "Household Income",
+      education    ~ "Education Level",
+      diabetes     ~ "Diabetes",
+      hypertension ~ "Hypertension",
+      high_cholest ~ "High Cholesterol",
+      cardio_burden ~ "Cardiovascular Burden",
+      stroke       ~ "Stroke",
+      cancer       ~ "Cancer"
+    )
+  )
 
-model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE)
+model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    label = case_when(
+      term == "veteranVeteran"                               ~ "Veteran (vs Non-Veteran)",
+      term == "age_years"                                    ~ "Age (years)",
+      term == "genderFemale"                                 ~ "Female (vs Male)",
+      term == "ethnicityMexican American"                    ~ "Mexican American (vs Non-Hispanic White)",
+      term == "ethnicityOther Hispanic"                      ~ "Other Hispanic (vs Non-Hispanic White)",
+      term == "ethnicityNon-Hispanic Black"                  ~ "Non-Hispanic Black (vs Non-Hispanic White)",
+      term == "ethnicityNon-Hispanic Asian"                  ~ "Non-Hispanic Asian (vs Non-Hispanic White)",
+      term == "ethnicityOther Race - Including Multi-Racial" ~ "Other/Multi-Racial (vs Non-Hispanic White)",
+      term == "hh_incomeLow income"                          ~ "Low Income (vs High Income)",
+      term == "hh_incomeLower middle"                        ~ "Lower Middle Income (vs High Income)",
+      term == "hh_incomeUpper middle"                        ~ "Upper Middle Income (vs High Income)",
+      term == "educationHigh school graduate/GED"            ~ "High School/GED (vs College Graduate)",
+      term == "educationLess than high school"               ~ "Less Than High School (vs College Graduate)",
+      term == "educationSome college or AA degree"           ~ "Some College (vs College Graduate)",
+      term == "diabetesYes"                                  ~ "Diabetes (vs No Diabetes)",
+      term == "hypertensionYes"                              ~ "Hypertension (vs No Hypertension)",
+      term == "high_cholestYes"                              ~ "High Cholesterol (vs No High Cholesterol)",
+      term == "cardio_burdenNo Cardio Burden"                ~ "No Cardiovascular Burden (vs Burden)",
+      term == "strokeYes"                                    ~ "Stroke (vs No Stroke)",
+      term == "cancerYes"                                    ~ "Cancer (vs No Cancer)"
+    ),
+    significant = case_when(
+      p.value < 0.05 ~ "Significant",
+      TRUE ~ "Not Significant"
+    )
+  )
 
-model_results <- model_results %>%
-  filter(term != "(Intercept)")
+# 05 Plotting Model Outcome ----
+ggplot(data = model_results) +
+  geom_point(mapping = aes(x = estimate, y = reorder(label, estimate, FUN = mean),
+                           color = significant), size = 3) +
+  geom_errorbarh(aes(y = reorder(label, estimate),
+                     xmin = conf.low, xmax = conf.high), width = 0) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "Predictors of Depression in US Adults: Adjusted Odds Ratios (NHANES 2017-2018)",
+    x = "Odds Ratio Estimate",
+    y = NULL,
+    color = "Statistical Significance"
+    
+  ) + 
+  scale_color_manual(
+    values = c("Significant" = "steelblue", "Not Significant" = "salmon"),
+    labels = c("Significant" = "Significant (p < 0.05)", 
+               "Not Significant" = "Not Significant (p ≥ 0.05)")
+  ) + 
+  theme_minimal()
+  
+  
+  
+  
