@@ -308,6 +308,17 @@ ggplot(roc_df, aes(x = specificity, y = sensitivity)) +
   theme_minimal()
 
 
-
-
+filter_phq9 <- filter(df_clean, !is.na(phq9_score))
+ggplot(filter_phq9, aes(x = veteran, y = phq9_score, fill = veteran)) +
+  geom_jitter(alpha = 0.05, width = 0.2) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  labs(
+    title = "PHQ-9 Scores of Veterans and Non-veterans", 
+    subtitle = "Veterans show slightly lower median PHQ-9 score than non-veterans",
+    x = "Veteran Status",
+    y = "PHQ-9 Scores"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") 
+  
 
