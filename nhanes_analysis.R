@@ -4,6 +4,7 @@ library(tidyverse)
 library(gtsummary)
 library(survey)
 library(broom)
+library(pROC)
 
 # 02 Import Data ----
 demo <- nhanes('DEMO_J')
@@ -73,10 +74,10 @@ mcq_clean <- nhanes('MCQ_J') %>%
 dpq_clean <- nhanes('DPQ_J') %>%
   rename(seqn = SEQN) %>%
   mutate(
-    across(
-      .cols = c(DPQ010, DPQ020, DPQ030, DPQ040, DPQ050, 
+    across(                                             # Applies mutate to all cols
+      .cols = c(DPQ010, DPQ020, DPQ030, DPQ040, DPQ050, # Cols to apply
                 DPQ060, DPQ070, DPQ080, DPQ090),
-      .fns = ~ case_when(
+      .fns = ~ case_when(                               # function applied
         .x == "Not at all" ~ 0,
         .x == "Several days" ~ 1,
         .x == "More than half the days" ~ 2,
@@ -87,10 +88,10 @@ dpq_clean <- nhanes('DPQ_J') %>%
     )
   ) %>% 
   mutate(
-    phq9_score = rowSums(across(ends_with("_num")), na.rm = FALSE)
+    phq9_score = rowSums(across(ends_with("_num")), na.rm = FALSE) # phq9 calculation
   ) %>%
   mutate(
-    phq9_category = case_when(
+    phq9_category = case_when( 
       between(phq9_score, 0, 4) ~ "No/Minimal depression",
       between(phq9_score, 5, 9) ~ "Mild depression",
       between(phq9_score, 10, 14) ~ "Moderate depression",
@@ -115,7 +116,7 @@ df_clean <- df_complete %>%
       )
     )
   ) %>%
-  mutate(
+  mutate(                   # Collapsing education categories
     education = case_when(
       education == "Less than 9th grade" ~ "Less than high school",
       education == "9-11th grade (Includes 12th grade with no diploma)" ~
@@ -128,7 +129,7 @@ df_clean <- df_complete %>%
       
     )
   ) %>%
-  mutate(
+  mutate(                  # Collapsing household income to 4 categories
     hh_income = case_when(
       hh_income == "$ 0 to $ 4,999" ~ "Low income",
       hh_income == "$ 5,000 to $ 9,999" ~ "Low income",
@@ -147,7 +148,7 @@ df_clean <- df_complete %>%
       .default = NA_character_
     )
   ) %>%
-  mutate(
+  mutate(                 # Binary depression scale 
     phq9_binary = case_when(
       phq9_score < 10 ~ "Not Depressed",
       phq9_score >= 10 ~ "Depressed",
@@ -155,13 +156,14 @@ df_clean <- df_complete %>%
     ),
     phq9_binary = factor(phq9_binary, levels = c("Not Depressed", "Depressed"))
   )
-
+# Setting reference ethnicity to Non-hispanic White
 df_clean <- df_clean %>%
   mutate(
     ethnicity = relevel(factor(ethnicity), ref = "Non-Hispanic White")
   )
 
 # 04 Table Summary and Logistic Regression Model ----
+# Table with statistical significance separated by veteran status
 df_clean %>%
   tbl_summary(
     by = veteran, 
@@ -188,7 +190,7 @@ df_clean %>%
   add_p()
 
 
-
+# Unadjusted odds ratio only for depression scale and veteran status
 model_unadjusted <- glm(
   phq9_binary ~ veteran,
   data = df_clean,
@@ -196,7 +198,7 @@ model_unadjusted <- glm(
 )
 
 
-
+# Adjusted logistic regression model including covariates
 model <- glm(
   phq9_binary ~ veteran + age_years + gender + ethnicity + hh_income+
     education + diabetes + hypertension + high_cholest + cardio_burden +
@@ -205,12 +207,13 @@ model <- glm(
   family = "binomial"
 ) 
 
-
-
+# Model summary, estimate, std dev, z value
 summary(model)
+# Exponentiated model with intercept and coefficients
 exp(coef(model))
+# Confidence intervals of exponentiated model
 exp(confint(model))
-
+# Odds ratio table with 95% CIs and p-values 
 model %>%
   tbl_regression(
     exponentiate = TRUE,
@@ -229,7 +232,7 @@ model %>%
       cancer       ~ "Cancer"
     )
   )
-
+# Dataframe produced from model results
 model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
   filter(term != "(Intercept)") %>%
   mutate(
@@ -262,6 +265,7 @@ model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
   )
 
 # 05 Plotting Model Outcome ----
+# Forest plot displaying adjusted odds ratio for each predictor
 ggplot(data = model_results) +
   geom_point(mapping = aes(x = estimate, y = reorder(label, estimate, FUN = mean),
                            color = significant), size = 3) +
@@ -283,5 +287,27 @@ ggplot(data = model_results) +
   theme_minimal()
   
   
+# ROC curve 
+roc_curve <- roc(model$y, fitted(model))
+
+roc_df <- data.frame(
+  specificity = 1 - roc_curve$specificities,
+  sensitivity = roc_curve$sensitivities
+)
   
-  
+ggplot(roc_df, aes(x = specificity, y = sensitivity)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+  annotate("text", x = 0.6, y = 0.2, 
+           label = paste("AUC =", round(auc(roc_curve), 3))) +
+  labs(
+    title = "ROC Curve - Depression Prediction Model", 
+    x = "1 - Specificity (False Positive Rate)",
+    y = "Sensitivity (True Positive Rate)"
+  ) +
+  theme_minimal()
+
+
+
+
+
