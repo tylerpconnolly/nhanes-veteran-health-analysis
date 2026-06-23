@@ -264,6 +264,7 @@ model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
     )
   )
 
+model_data <- model$model
 # 05 Plotting Model Outcome ----
 # Forest plot displaying adjusted odds ratio for each predictor
 ggplot(data = model_results) +
@@ -307,7 +308,7 @@ ggplot(roc_df, aes(x = specificity, y = sensitivity)) +
   ) +
   theme_minimal()
 
-
+# Boxplot for veteran and non-veteran PHQ-9 scores
 filter_phq9 <- filter(df_clean, !is.na(phq9_score))
 ggplot(filter_phq9, aes(x = veteran, y = phq9_score, fill = veteran)) +
   geom_jitter(alpha = 0.05, width = 0.2) +
