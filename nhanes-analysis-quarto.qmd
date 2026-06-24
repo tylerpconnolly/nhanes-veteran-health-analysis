@@ -17,12 +17,6 @@ editor: visual
 source("nhanes_analysis.R")
 ```
 
-```{r}
-#| echo: false
-
-ls()
-```
-
 ## Introduction
 
 Depression affects approximately 8% of US adults annually and represents a leading cause of disability worldwide, making identification of at-risk populations a critical public health priority. Veteran mental health is a topic of significant public health concern to the nation. The estimated 19 million veterans in the United States face unique health challenges stemming from military service, including elevated rates of chronic disease, traumatic injury, and mental health burden. To investigate if unique health challenges faced by veterans increase their likelihood of depression, this analysis examined depression rates among veteran and non-veteran populations in addition to exploring other potential depression predictors.
@@ -33,11 +27,11 @@ The primary objective of this analysis was to determine whether veteran status i
 
 ## Data and Methods
 
-The National Health and Nutrition Examination Survey (NHANES) is an annual survey conducted by the CDC's National Center for Health Statistics that collects data regarding the health of adults and children in the United States. NHANES includes health exams, laboratory tests, and dietary interviews to obtain a comprehensive picture of participants' health. Each year NHANES selects around 5000 participants from around the US to participate using a randomized process.
+The National Health and Nutrition Examination Survey (NHANES) is an annual survey conducted by the CDC's National Center for Health Statistics that collects data regarding the health of adults and children in the United States. NHANES includes health exams, laboratory tests, and dietary interviews to obtain a comprehensive picture of participants' health. Each year NHANES selects around 5000 individuals from around the US to participate using a randomized process.
 
 NHANES provides a wealth of information and variables to select from, however, since the aim of this analysis was to capture predictors related to depression, a subset of variables was selected encompassing socioeconomic status, chronic disease burden, age, gender, and ethnicity. This subset was selected both for control purposes, so that confounders were minimized and based on prior research identifying income level and stroke as predictors of depression.
 
-Depression status was defined as a PHQ-9 score of 10 or greater, consistent with the established clinical threshold for moderate depression. Household income was broken down into 4 categories: high (\$75,000+/year), upper middle (45,000 - 74,999/year), lower middle (20,000 - 44,999/year), and low (less than 20,000/year). Education level also included 4 categories: college graduate or above, some college or AA degree, high school graduate/GED, and less than high school. Cardio burden encapsulated 4 different cardiac events and disease including: heart failure, heart disease, angina, and heart attack. If a participant experienced any one of those 4 cardiac events or disease they were labeled as having a cardio burden. Stroke, diabetes, cancer, hypertension, and high cholesterol rounded out the health condition variables with previous research indicating stroke in particular being highly predictive of depression (Author, Year). Age, gender, and ethnicity were also included to examine their associations with depression and account for potential confounding.
+Depression status was defined as a PHQ-9 score of 10 or greater, consistent with the established clinical threshold for moderate depression. Household income was broken down into 4 categories: high (\$75,000+/year), upper middle ($45,000 - $74,999/year), lower middle ($20,000 - $44,999/year), and low (less than $20,000/year). Education level also included 4 categories: college graduate or above, some college or AA degree, high school graduate/GED, and less than high school. Cardio burden encapsulated 4 different cardiac events and disease including: heart failure, heart disease, angina, and heart attack. If a participant experienced any one of those 4 cardiac events or disease they were labeled as having a cardio burden. Stroke, diabetes, cancer, hypertension, and high cholesterol rounded out the health condition variables with previous research indicating stroke in particular being highly predictive of depression (Author, Year). Age, gender, and ethnicity were also included to examine their associations with depression and account for potential confounding.
 
 Participants missing veteran status were excluded from the analysis entirely, as veteran status was the primary exposure of interest. Participants missing PHQ-9 data were similarly excluded, as depression status could not be determined without it. All remaining missing covariate data was handled via listwise deletion through R's glm() function, which automatically excludes any row with a missing value in any model variable. The final analytic sample used in the logistic regression model was n = 4190.
 
@@ -45,9 +39,37 @@ To analyze the data, an unadjusted logistic regression model was run first to de
 
 ## Results
 
-After handling missing data, the final sample was n = 4190, with 356 (8.5%) meeting the threshold for depression and 439 (10.5%) identifying as veterans. Most of the results from this model fall in line with other findings for depression indicators (Author, Year). The main emphasis of this analysis, veteran status, was not found to be a statistically significant indicator of depression with a p-value = 0.343 and 95% CI of (0.80, 1.84). The confidence interval included 1, indicating the effect was not statistically distinguishable from no association. While veteran status was not found to be significant, ethnicity, age, gender, household income, education, hypertension, cardio burden, and stroke were all found to be significant.
+After handling missing data, the final sample was n = 4190, with 356 (8.5%) meeting the threshold for depression and 439 (10.5%) identifying as veterans. Table 1 presents descriptive statistics for all participants with recorded veteran status (n = 6001), reflecting the full sample prior to covariate exclusions.
 
-Low income was the most predictive variable. Someone in the low income category is 2.37 times more likely to have depression than someone of high income. Stroke was another strong predictor of depression, individuals who had a stroke at some point in their life were twice as likely to have depression. Some of the more notable non-predictive variables were diabetes and cancer. Both diseases are very impactful on an individual yet neither were shown to increase or decrease chances of depression. Finally, age had a slightly protective effect. Each additional year of age was associated with a 2% decrease in the odds of depression (OR=0.98, p\<0.001).
+```{r}
+#| echo: false
+
+table1
+```
+
+Most of the results from this model fall in line with other findings for depression indicators (Author, Year). The main emphasis of this analysis, veteran status, was not found to be a statistically significant indicator of depression with a p-value = 0.343 and 95% CI of (0.80, 1.84). The confidence interval included 1, indicating the effect was not statistically distinguishable from no association. While veteran status was not found to be significant, ethnicity, age, gender, household income, education, hypertension, cardio burden, and stroke were all found to be significant. Table 2 presents the full adjusted model results including odds ratios, confidence intervals, and p-values for all variables.
+
+```{r}
+#| echo: false
+
+model_table
+```
+
+Low income was the most predictive variable. Someone in the low income category is 2.37 times more likely to have depression than someone of high income. Stroke was another strong predictor of depression, individuals who had a stroke at some point in their life were twice as likely to have depression. Some of the more notable non-predictive variables were diabetes and cancer. Both diseases are very impactful on an individual yet neither were shown to increase or decrease chances of depression. Finally, age had a slightly protective effect. Each additional year of age was associated with a 2% decrease in the odds of depression (OR=0.98, p\<0.001). Figure 1 displays the adjusted odds ratios for all model variables. The forest plot visually confirms low income, stroke, and female gender as the strongest positives predictors of depression, with age showing a modest protective effect. 
+
+```{r}
+#| echo: false
+
+forest_plot
+```
+
+Figure 2 presents the receiver operating characteristic (ROC) curve for the adjusted model. The model achieved an AUC of 0.701, indicating moderate discriminatory ability in distinguishing depressed from non-depressed participants.  
+
+```{r}
+#| echo: false
+
+roc_plot
+```
 
 ## Discussion
 
@@ -55,7 +77,7 @@ While veteran status was not found to be a reliable predictor of depression, thi
 
 Overall, the lack of a statistically significant result for veteran status is not a failure and there are a few explanations for why this may be the case. The healthy soldier effect is one such explanation, that veterans are selected from a pool of already fit individuals who are likely to have comparative rates of depression to the general public despite having endured intense periods of mental and physical hardship during their military service. Additional analyses on stratified subgroups could be done to investigate whether there are differences between veterans of different eras and combat status. Veterans from the WWII era may have varied rates of depression than those who served during Vietnam or the wars on global terror in Iraq and Afghanistan. Therefore, there is still much to explore when it comes to identifying groups of veterans who are at higher-risk of developing depression.
 
-##Limitations
+## Limitations
 
 This analysis had a number of limitations in its design and scope. The NHANES cross-sectional design only provided a snapshot of depression prevalence of the population tested and therefore is not enough to establish causality or temporal relationships. Additionally, using listwise deletion for missing data values meaningfully reduced the sample size from the full dataset. The rows removed may have been distinct from those remaining in the sample. Another limitation was the reliance on self-reported data. Veteran status, most health conditions, and PHQ-9 scores relied on participants self-reported responses and could have been influenced by self-report bias. The PHQ-9 threshold itself was another limitation as the binary cutoff of \>= 10, discards variation in symptom severity and may misclassify indviduals near the threshold. Finally, the veteran sample size of 439 limited statistical power to detect modest effects if they existed.
 
