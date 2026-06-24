@@ -164,7 +164,7 @@ df_clean <- df_clean %>%
 
 # 04 Table Summary and Logistic Regression Model ----
 # Table with statistical significance separated by veteran status
-df_clean %>%
+table1 <- df_clean %>%
   tbl_summary(
     by = veteran, 
     include = c(age_years, gender, ethnicity, hh_income,
@@ -214,7 +214,7 @@ exp(coef(model))
 # Confidence intervals of exponentiated model
 exp(confint(model))
 # Odds ratio table with 95% CIs and p-values 
-model %>%
+model_table <- model %>%
   tbl_regression(
     exponentiate = TRUE,
     label = list(
@@ -267,7 +267,7 @@ model_results <- tidy(model, exponentiate = TRUE, conf.int = TRUE) %>%
 model_data <- model$model
 # 05 Plotting Model Outcome ----
 # Forest plot displaying adjusted odds ratio for each predictor
-ggplot(data = model_results) +
+forest_plot <- ggplot(data = model_results) +
   geom_point(mapping = aes(x = estimate, y = reorder(label, estimate, FUN = mean),
                            color = significant), size = 3) +
   geom_errorbarh(aes(y = reorder(label, estimate),
@@ -296,7 +296,7 @@ roc_df <- data.frame(
   sensitivity = roc_curve$sensitivities
 )
   
-ggplot(roc_df, aes(x = specificity, y = sensitivity)) +
+roc_plot <- ggplot(roc_df, aes(x = specificity, y = sensitivity)) +
   geom_line(color = "steelblue", linewidth = 1) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
   annotate("text", x = 0.6, y = 0.2, 
