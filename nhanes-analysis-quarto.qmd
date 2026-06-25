@@ -4,6 +4,7 @@ author: "Tyler Connolly"
 date: "June 16, 2026"
 format: 
   html:
+    self-contained: true
     toc: true
     toc-depth: 2
 editor: visual
